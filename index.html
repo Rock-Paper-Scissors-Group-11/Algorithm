@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8fc">
+  <meta name="description" content="Play rock, paper, scissors against the computer using your hand or quick move buttons.">
+  <title>HandRPS — Rock, Paper, Scissors</title>
+  <link rel="icon" href="assets/icons/site.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" type="module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#play" aria-label="HandRPS home">
+      <span class="brand-mark" aria-hidden="true"><img src="assets/icons/brand.svg" alt=""></span>
+      <span>Hand<span class="brand-accent">RPS</span><small>CAMERA EDITION</small></span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+      <button class="nav-link is-active" data-page="play">Play game</button>
+      <button class="nav-link" data-page="history">Match history</button>
+      <button class="nav-link" data-page="about">How to play</button>
+    </nav>
+    <div class="top-actions">
+      <span class="connection-pill"><i id="cameraDot"></i><span id="cameraStatus">Camera off</span></span>
+      <button class="icon-button" id="soundToggle" type="button" aria-label="Turn sound off" title="Toggle sound"><img src="assets/icons/sound-on.svg" alt=""></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page is-visible" id="playPage" aria-labelledby="gameHeading">
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-dot"></span> CLASSIC RULES <span class="eyebrow-separator">·</span> FIRST TO 3 WINS</div>
+          <h1 id="gameHeading">Rock <span>·</span> Paper <span>·</span> Scissors</h1>
+          <p class="subheading">Show your move. Beat the computer. Take the match.</p>
+        </div>
+        <div class="match-scoreboard" aria-label="Match score">
+          <div><span>ROUND</span><strong id="roundNumber">1</strong></div>
+          <div><span>DRAWS</span><strong id="drawNumber">0</strong></div>
+          <div class="target-score"><span>TARGET</span><strong>3 wins</strong></div>
+        </div>
+      </div>
+
+      <div class="game-grid">
+        <article class="game-card computer-card">
+          <div class="card-heading">
+            <div class="person-heading"><span class="avatar avatar-ai">✦</span><div><h2>Computer <span>(AI)</span></h2><small>Random move · revealed after GO</small></div></div>
+            <div class="score-badge"><span>Score</span><strong id="aiScore">0</strong></div>
+          </div>
+          <div class="computer-stage">
+            <div class="choice-orb ai-orb" id="aiOrb"><span class="question-mark">?</span></div>
+            <div class="move-label" id="aiMoveLabel">HIDDEN CHOICE</div>
+            <p id="aiHint">The AI has picked its move.</p>
+          </div>
+          <div class="card-footer"><span>● Ready to play</span><span>Computer</span></div>
+        </article>
+
+        <div class="versus-badge" aria-hidden="true">VS</div>
+
+        <article class="game-card player-card">
+          <div class="card-heading">
+            <div class="person-heading"><span class="avatar avatar-you">☺</span><div><h2>You <span>(Player)</span></h2><small>Hand tracking runs on this device</small></div></div>
+            <div class="score-badge score-player"><span>Score</span><strong id="playerScore">0</strong></div>
+          </div>
+          <div class="camera-stage" id="cameraStage">
+            <video id="cameraVideo" autoplay muted playsinline aria-label="Live webcam preview"></video>
+            <div class="camera-placeholder" id="cameraPlaceholder">
+              <img class="camera-guide" src="assets/images/camera-guide.svg" alt="">
+              <strong>Your camera preview</strong>
+              <span>Start a camera match to play with hand gestures</span>
+            </div>
+            <div class="camera-overlay"><span class="live-dot"></span><span id="detectionLabel">CAMERA NOT STARTED</span></div>
+            <div class="gesture-chip" id="gestureChip" hidden></div>
+          </div>
+          <div class="camera-caption"><span id="playerHint">Choose a way to play to get started.</span><span class="tracking-badge" id="trackingBadge">● Ready</span></div>
+        </article>
+      </div>
+
+      <section class="round-console" aria-live="polite">
+        <div class="round-message">
+          <span class="message-icon" id="messageIcon">✦</span>
+          <div><strong id="roundTitle">Ready when you are</strong><span id="roundMessage">Start a camera match or play with the move buttons.</span></div>
+        </div>
+        <div class="round-actions" id="homeActions">
+          <button class="button button-primary" id="cameraStartButton" type="button"><span>◎</span> Start camera match</button>
+          <button class="button button-secondary" id="manualStartButton" type="button">Play with buttons</button>
+        </div>
+        <div class="move-actions" id="moveActions" hidden>
+          <button class="move-button" data-move="ROCK" type="button" disabled><img src="assets/icons/rock.svg" alt=""><b>Rock</b></button>
+          <button class="move-button" data-move="PAPER" type="button" disabled><img src="assets/icons/paper.svg" alt=""><b>Paper</b></button>
+          <button class="move-button" data-move="SCISSORS" type="button" disabled><img src="assets/icons/scissors.svg" alt=""><b>Scissors</b></button>
+        </div>
+        <div class="result-actions" id="resultActions" hidden>
+          <button class="button button-secondary" id="newMatchButton" type="button">↻ New match</button>
+          <button class="button button-primary" id="cameraAgainButton" type="button"><span>◎</span> Play with camera</button>
+        </div>
+      </section>
+
+      <div class="round-progress" id="roundProgress" hidden><span id="progressFill"></span></div>
+      <p class="privacy-note"><span>▣</span> Your camera is processed in your browser. Video is never uploaded or saved.</p>
+
+      <section class="quick-rules" aria-label="Quick gesture guide">
+        <div class="quick-rules-title"><span>✦</span><strong>Quick gesture guide</strong><small>Classic rules</small></div>
+        <div class="rule-item"><img src="assets/icons/rock.svg" alt=""><div><strong>Rock beats scissors</strong><small>Rock crushes scissors</small></div></div>
+        <div class="rule-item"><img src="assets/icons/paper.svg" alt=""><div><strong>Paper beats rock</strong><small>Paper covers rock</small></div></div>
+        <div class="rule-item"><img src="assets/icons/scissors.svg" alt=""><div><strong>Scissors beat paper</strong><small>Scissors cut paper</small></div></div>
+      </section>
+    </section>
+
+    <section class="page" id="historyPage" aria-labelledby="historyHeading" hidden>
+      <div class="page-heading history-heading">
+        <div><div class="eyebrow"><span class="eyebrow-dot"></span> YOUR LOCAL GAME LOG</div><h1 id="historyHeading">Match history</h1><p class="subheading">Your recent matches, saved only in this browser.</p></div>
+        <div class="history-tools"><button class="button button-secondary button-small" id="exportButton" type="button">⇩ Export CSV</button><button class="button button-danger button-small" id="clearHistoryButton" type="button">Clear history</button></div>
+      </div>
+      <div class="stats-grid">
+        <article class="stat-card"><span class="stat-icon icon-blue">▣</span><small>Total matches</small><strong id="statMatches">0</strong><span class="stat-foot">Played on this device</span></article>
+        <article class="stat-card"><span class="stat-icon icon-green">♛</span><small>Match wins</small><strong id="statWins">0</strong><span class="stat-foot" id="statWinRate">0% win rate</span></article>
+        <article class="stat-card"><span class="stat-icon icon-red">✦</span><small>AI wins</small><strong id="statLosses">0</strong><span class="stat-foot">A worthy rival</span></article>
+        <article class="stat-card"><span class="stat-icon icon-yellow">＝</span><small>Round draws</small><strong id="statDraws">0</strong><span class="stat-foot">Identical hands</span></article>
+        <article class="stat-card"><span class="stat-icon icon-purple">♧</span><small>Favorite move</small><strong class="favorite-value" id="statFavorite">—</strong><span class="stat-foot" id="statFavoriteRate">Play a match to find out</span></article>
+      </div>
+      <article class="history-card">
+        <div class="section-card-heading"><div><h2>Recent rounds</h2><p>Round-by-round results from your latest matches</p></div><span class="table-count" id="historyCount">0 rounds</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Match</th><th>Time</th><th>Your move</th><th>Computer</th><th>Result</th><th>Final score</th></tr></thead><tbody id="historyRows"></tbody></table></div>
+        <div class="empty-history" id="emptyHistory"><span>◷</span><strong>No matches yet</strong><p>Play a match and its rounds will appear here.</p><button class="button button-primary button-small" data-page="play" type="button">Play a match</button></div>
+      </article>
+      <p class="privacy-note history-privacy"><span>▣</span> History is stored in local browser storage. Export a CSV to keep a copy.</p>
+    </section>
+
+    <section class="page" id="aboutPage" aria-labelledby="aboutHeading" hidden>
+      <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span> QUICK GUIDE</div><h1 id="aboutHeading">How to play</h1><p class="subheading">A few rounds, a steady hand, and a little luck.</p></div></div>
+      <div class="about-grid">
+        <article class="about-card"><span class="about-number">01</span><span class="about-icon">◎</span><h2>Choose your play style</h2><p>Start a camera match and allow camera access, or choose “Play with buttons” to play without a camera.</p></article>
+        <article class="about-card"><span class="about-number">02</span><span class="about-icon">✋</span><h2>Make your move on GO</h2><p>For camera play, show rock, paper, or scissors when the countdown reaches GO. Hold the hand in view briefly.</p></article>
+        <article class="about-card"><span class="about-number">03</span><span class="about-icon">♛</span><h2>First to 3 wins</h2><p>Rounds start automatically. Draws do not score. The first player to 3 round wins takes the match.</p></article>
+      </div>
+      <article class="about-note"><span>▣</span><div><strong>Privacy by design</strong><p>Camera hand tracking happens locally in your browser. The app does not send or store video. Match history is saved in this browser only. Camera play requires HTTPS or localhost.</p></div></article>
+      <button class="button button-primary" data-page="play" type="button">Go to the game</button>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>HandRPS <span class="footer-dot">·</span> A camera-powered RPS game</span><span>Runs in your browser <span class="footer-dot">·</span> Camera video stays on your device</span></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

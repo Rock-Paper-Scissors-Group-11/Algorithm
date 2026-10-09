@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 150">
+  <defs>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff"/>
+      <stop offset="1" stop-color="#eeecff"/>
+    </linearGradient>
+    <linearGradient id="hand" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffd7b6"/>
+      <stop offset="1" stop-color="#f3ae89"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="139" cy="137" rx="112" ry="8" fill="#dcdcf1"/>
+  <rect x="20" y="14" width="240" height="112" rx="20" fill="#6254dc"/>
+  <rect x="27" y="21" width="226" height="98" rx="15" fill="url(#screen)"/>
+  <circle cx="140" cy="30" r="2" fill="#9693ba"/>
+  <path d="M111 97V67a7 7 0 0 1 14 0V48a7 7 0 0 1 14 0v19-13a7 7 0 0 1 14 0v16-9a7 7 0 0 1 14 0v18c0 18-11 29-28 29h-8c-10 0-17-5-23-13L96 97a7 7 0 0 1 11-8z" transform="translate(-8,-10) scale(.9)" fill="url(#hand)" stroke="#d58b70" stroke-linejoin="round" stroke-width="3"/>
+  <circle cx="48" cy="49" r="14" fill="#edeaff"/>
+  <path d="m40 51 6-8 6 4 5-7" fill="none" stroke="#7668e9" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <circle cx="231" cy="91" r="15" fill="#e2f8ef"/>
+  <path d="m224 91 5 5 9-11" fill="none" stroke="#19a879" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+</svg>
