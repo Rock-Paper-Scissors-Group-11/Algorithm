@@ -1,62 +1,70 @@
-# HandRPS — Rock, Paper, Scissors
+# HandPlay
 
-A responsive, static website for playing rock-paper-scissors against the computer. Play with a webcam and hand gestures, or use the on-screen move buttons.
+HandPlay is a desktop Rock Paper Scissors game that uses OpenCV and MediaPipe to read hand gestures from a webcam, with on-screen and mouse controls available for playing.
 
-## Play locally
+## Requirements
 
-Open a terminal in the project folder and run:
+- Python 3.11
+- A webcam for gesture controls
+- OpenCV, MediaPipe, NumPy, and Pillow (listed in `requirements.txt`)
+- pytest to run the automated tests
 
-```powershell
-python start_web.py
+## Installation
+
+From the project root, install the project requirements:
+
+```sh
+pip install -r requirements.txt
 ```
 
-This starts a local web server and opens the game in your browser at <http://localhost:8000>. Keep the terminal open while you play. Camera access requires a secure page: `localhost` is allowed for local play; deployed sites must use HTTPS. Select **Start camera match** and allow camera access, or select **Play with buttons** to play without a camera.
+## How to play
 
-The static website consists of `index.html`, `styles.css`, and `app.js`. It does not require a Python web server in production.
+Run `python main.py` from the project root. Select **Start Game** using the mouse or hold the hand cursor over a button for 1 second. Each round has a 3-second countdown; show a move during capture or select a move button. The first player to win 3 rounds wins the match; draws are recorded but do not increase either player's score.
 
-## Deploy
+## Gestures
 
-Deploy the project root as a static site using GitHub Pages, Netlify, or another static host. Configure the site to serve `index.html` and ensure the published URL uses HTTPS so browsers can grant camera access.
+- **Rock:** no recognized fingers extended.
+- **Paper:** three or four recognized fingers extended.
+- **Scissors:** index and middle fingers extended, with ring finger and pinky folded.
 
-Camera play loads its hand-landmark model from `assets/models/hand_landmarker.task`. Hand detection runs locally in the browser; the video is not uploaded or saved. The MediaPipe browser runtime is loaded from jsDelivr, so camera play requires an internet connection the first time. Sounds, illustrations, icons, and fonts are stored locally in `assets/`. Match history is stored in the browser's local storage and can be exported as CSV from **Match history**.
-
-## Features
-
-- First to three round wins takes the match; draws do not score.
-- Camera play recognizes rock, paper, and scissors; unclear or missing gestures lose the round after the capture timer.
-- Automatic rounds, score and countdown display, and optional sound effects.
-- Manual play when the camera is unavailable.
-- Local match history, match statistics, CSV export, and responsive play/history/help pages.
-
-## Local assets
-
-- `assets/sounds/` contains the countdown, round-result, and match sound effects.
-- `assets/icons/` and `assets/images/` contain the game's move icons, app icons, and camera illustration.
-- `assets/fonts/` contains the DM Sans and Space Grotesk variable fonts and their SIL Open Font License files.
-- `assets/models/hand_landmarker.task` is the hand-tracking model used by both game versions.
-
-The website's fonts, artwork, sounds, and model load from the project itself. Camera hand tracking still loads the MediaPipe browser runtime from jsDelivr, so that feature needs an internet connection.
-
-## Python desktop version
-
-The original OpenCV desktop app remains available separately:
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe play_game.py
-```
-
-The desktop app opens on a welcome screen with mouse and one-second hand-dwell
-controls for the home menu, how-to guide, settings, and recent-round history.
-During play, it keeps the camera gesture controls, pause and match-result
-screens. Sound effects and their volume can be adjusted in Settings. The
-desktop sound player uses Windows Media Control Interface; if Windows has no
-available audio output, the game reports that and keeps the rest of the menus
-usable.
+See the [gesture guide](docs/gesture-guide.md) for classifier details and tips.
 
 ## Project structure
 
-- `index.html`, `styles.css`, `app.js` — deployable browser game.
-- `start_web.py` — local launcher; uses only Python's standard library.
-- `src/` — Python game rules, camera, hand tracking, and desktop game.
-- `tests/` — Python unit tests.
+- `main.py`, `play_game.py` — desktop game entry point and interface.
+- `src/` — camera, hand tracking, gesture processing, game state, scoring, and rendering modules.
+- `tests/` — automated tests.
+- `scripts/` — optional camera and hand-tracking diagnostic scripts.
+- `docs/` — architecture, state, gesture, and measurement documentation.
+- `index.html`, `app.js`, `styles.css` — browser version.
+
+## Design documentation
+
+- [Architecture](docs/architecture.md)
+- [Game state diagram](docs/state-diagram.md)
+
+## Tests and camera measurements
+
+Run the automated tests with:
+
+```sh
+python -m pytest
+```
+
+To measure gesture accuracy and average FPS under your lighting, run:
+
+```sh
+python -m scripts.measure_accuracy
+```
+
+The script asks for the lighting condition, then records 20 trials each for Rock, Paper, and Scissors. It prints and appends the actual run results to `docs/measured_results.md`; it does not estimate camera accuracy or FPS.
+
+## Known limitations
+
+- Desktop sound uses the Windows Media Control Interface and is available on Windows only.
+- When multiple hands are detected, the game uses the hand with the largest normalized bounding box as its primary hand.
+- Lighting, hand distance, and visibility can affect gesture recognition.
+
+## Browser version
+
+The browser version uses `index.html`, `app.js`, and `styles.css`. Start its local server with `python start_web.py`.

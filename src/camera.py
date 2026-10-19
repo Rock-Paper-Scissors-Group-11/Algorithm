@@ -44,7 +44,10 @@ class Camera:
         """Return one frame (BGR image), or None if the camera failed."""
         if not self.is_opened():
             return None
-        success, frame = self.cap.read()
+        try:
+            success, frame = self.cap.read()
+        except Exception:
+            return None
         if not success:
             return None
         if config.MIRROR_VIEW:

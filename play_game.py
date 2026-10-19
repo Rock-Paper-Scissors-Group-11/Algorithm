@@ -3,22 +3,69 @@
 Point your INDEX FINGER at a button and keep it there for 1 second to select.
 Mouse clicks and move buttons are also available.
 
-Run with:  python play_game.py
+Run with:  python main.py
 """
 import time
 
 import cv2
+import numpy as np
 
 from src.camera import Camera
-from src.config import DWELL_SECONDS, UNKNOWN
+from src.config import DWELL_SECONDS, FULLSCREEN, UNKNOWN
 from src.audio import AudioManager
 from src.game_controller import GameController, State
 from src.gesture_classifier import classify
 from src.hand_pointer import DwellClicker, Pointer, index_tip_normalized
 from src.hand_tracker import HandTracker
-from src.renderer import HEIGHT, WIDTH, Renderer, buttons_for
+from src.renderer import HEIGHT, PALE, WIDTH, Renderer, buttons_for
 
 WINDOW = "Rock Paper Scissors"
+
+
+def fit_scale(canvas_w: int, canvas_h: int, window_w: int, window_h: int):
+    """Return scale, centered offsets, and image size, or None for zero sizes."""
+    if min(canvas_w, canvas_h, window_w, window_h) <= 0:
+        return None
+    scale = min(window_w / canvas_w, window_h / canvas_h)
+    image_w = max(1, round(canvas_w * scale))
+    image_h = max(1, round(canvas_h * scale))
+    offset_x = (window_w - image_w) // 2
+    offset_y = (window_h - image_h) // 2
+    return scale, offset_x, offset_y, image_w, image_h
+
+
+def window_to_canvas(x, y, canvas_w: int, canvas_h: int,
+                     window_w: int, window_h: int):
+    """Map a window click to canvas coordinates, or None outside the image."""
+    fitted = fit_scale(canvas_w, canvas_h, window_w, window_h)
+    if fitted is None:
+        return None
+    _, offset_x, offset_y, image_w, image_h = fitted
+    if not (offset_x <= x < offset_x + image_w
+            and offset_y <= y < offset_y + image_h):
+        return None
+    canvas_x = int((x - offset_x) * canvas_w / image_w)
+    canvas_y = int((y - offset_y) * canvas_h / image_h)
+    return canvas_x, canvas_y
+
+
+class SilentAudio:
+    def __init__(self) -> None:
+        self.enabled = False
+        self.available = False
+        self.volume = 0.0
+
+    def play(self, name) -> None:
+        pass
+
+    def set_enabled(self, value) -> None:
+        pass
+
+    def set_volume(self, value) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
 
 
 def handle_action(action, game, view, audio, history_return_view):
@@ -71,7 +118,11 @@ def handle_action(action, game, view, audio, history_return_view):
 
 
 def main() -> None:
-    audio = AudioManager()
+    try:
+        audio = AudioManager()
+    except Exception:
+        print("Sound unavailable")
+        audio = SilentAudio()
     try:
         tracker = HandTracker()
     except Exception as error:
@@ -80,6 +131,8 @@ def main() -> None:
 
     camera = Camera()
     camera_available = camera.open()
+    next_camera_retry = time.monotonic() + 2.0
+    failed_camera_frames = 0
     if not camera_available:
         print("Could not open the webcam. The welcome and menu screens remain available.")
 
@@ -97,13 +150,38 @@ def main() -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
             mouse_click.append((x, y))
 
-    cv2.namedWindow(WINDOW)
+    cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
     cv2.setMouseCallback(WINDOW, on_mouse)
+    fullscreen = FULLSCREEN
+    cv2.setWindowProperty(
+        WINDOW, cv2.WND_PROP_FULLSCREEN,
+        cv2.WINDOW_FULLSCREEN if fullscreen else cv2.WINDOW_NORMAL,
+    )
     print("Select Start Game to open the menu. Q = quit.")
 
     try:
         while view != "QUIT":
-            frame = camera.read() if camera_available else None
+            now = time.monotonic()
+            window_rect = cv2.getWindowImageRect(WINDOW)
+            window_w, window_h = window_rect[2], window_rect[3]
+            if camera_available:
+                frame = camera.read()
+                if frame is None:
+                    failed_camera_frames += 1
+                    if failed_camera_frames > 30:
+                        camera.release()
+                        camera_available = False
+                        failed_camera_frames = 0
+                        next_camera_retry = time.monotonic() + 2.0
+                else:
+                    failed_camera_frames = 0
+            else:
+                frame = None
+                if now >= next_camera_retry:
+                    camera_available = camera.open()
+                    if not camera_available:
+                        next_camera_retry = time.monotonic() + 2.0
+
             landmarks = tracker.detect(frame) if tracker is not None and frame is not None else None
             if tracker is not None and frame is not None:
                 tracker.draw(frame, landmarks)
@@ -111,7 +189,6 @@ def main() -> None:
             if view != "PAUSED":
                 game.update(raw)
 
-            now = time.monotonic()
             if frame is not None:
                 frame_h, frame_w = frame.shape[:2]
                 fingertip = index_tip_normalized(landmarks, frame_w, frame_h)
@@ -122,11 +199,16 @@ def main() -> None:
 
             action = clicker.update(cursor, buttons, now)
             if mouse_click:
-                point = mouse_click.pop()
+                window_point = mouse_click.pop()
                 mouse_click.clear()
-                for button in buttons:
-                    if button.contains(point):
-                        action = button.name
+                point = window_to_canvas(
+                    window_point[0], window_point[1], WIDTH, HEIGHT,
+                    window_w, window_h,
+                )
+                if point is not None:
+                    for button in buttons:
+                        if button.contains(point):
+                            action = button.name
             if action:
                 if action == "HISTORY":
                     history_return_view = view
@@ -155,9 +237,30 @@ def main() -> None:
                 game, frame, raw, view, buttons, cursor, clicker, now,
                 audio.enabled, audio.volume, camera_available, audio.available,
             )
-            cv2.imshow(WINDOW, screen)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            window_rect = cv2.getWindowImageRect(WINDOW)
+            window_w, window_h = window_rect[2], window_rect[3]
+            fitted = fit_scale(WIDTH, HEIGHT, window_w, window_h)
+            if fitted is not None:
+                _, offset_x, offset_y, image_w, image_h = fitted
+                scaled = cv2.resize(
+                    screen, (image_w, image_h), interpolation=cv2.INTER_LINEAR,
+                )
+                display = np.full(
+                    (window_h, window_w, 3), PALE, dtype=np.uint8,
+                )
+                display[offset_y:offset_y + image_h,
+                        offset_x:offset_x + image_w] = scaled
+                cv2.imshow(WINDOW, display)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key in (ord("q"), ord("Q")):
                 break
+            if key in (ord("f"), ord("F")):
+                fullscreen = not fullscreen
+                cv2.setWindowProperty(
+                    WINDOW, cv2.WND_PROP_FULLSCREEN,
+                    cv2.WINDOW_FULLSCREEN if fullscreen else cv2.WINDOW_NORMAL,
+                )
             if cv2.getWindowProperty(WINDOW, cv2.WND_PROP_VISIBLE) < 1:
                 break
     finally:

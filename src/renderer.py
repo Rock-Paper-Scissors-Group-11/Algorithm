@@ -25,6 +25,7 @@ PINK = (156, 122, 240)
 ORANGE = (77, 169, 255)
 GREEN = (89, 199, 52)
 RED = (90, 90, 255)
+BLUE = (150, 70, 65)
 GRAY = (130, 130, 130)
 DARK = (40, 40, 40)
 WHITE = (255, 255, 255)
@@ -32,8 +33,8 @@ PALE = (249, 249, 252)
 RESULT_COLORS = {WIN: GREEN, LOSE: RED, DRAW: (0, 190, 240)}
 BUTTON_COLORS = {
     "START": GREEN, "AGAIN": GREEN, "HELP": PURPLE, "SETTINGS": PURPLE,
-    "SOUND_TOGGLE": GREEN, "VOLUME_DOWN": GRAY, "VOLUME_UP": GRAY,
-    "HISTORY": PURPLE, "CLEAR_HISTORY": ORANGE, "BACK": GRAY,
+    "SOUND_TOGGLE": GREEN, "VOLUME_DOWN": ORANGE, "VOLUME_UP": PURPLE,
+    "HISTORY": PURPLE, "CLEAR_HISTORY": ORANGE, "BACK": BLUE,
     "MAIN_MENU": PURPLE, "EXIT": RED, "PAUSE": ORANGE, "RESUME": GREEN,
     "MOVE_ROCK": GREEN, "MOVE_PAPER": PURPLE, "MOVE_SCISSORS": ORANGE,
 }
@@ -58,24 +59,39 @@ def _font(size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(str(FONT_PATH), size=size)
 
 
-def text_center(img, text, cx, cy, scale, color, thickness=2):
+def text_center(img, text, cx, cy, scale, color, thickness=2,
+                outline_color=None):
     if _TEXT_QUEUE is not None:
-        _TEXT_QUEUE.append((str(text), cx, cy, scale, color, thickness))
+        _TEXT_QUEUE.append((
+            str(text), cx, cy, scale, color, thickness, outline_color,
+        ))
         return
     (w, h), _ = cv2.getTextSize(str(text), FONT, scale, thickness)
-    cv2.putText(img, str(text), (int(cx - w / 2), int(cy + h / 2)), FONT,
-                scale, color, thickness, cv2.LINE_AA)
+    origin = (int(cx - w / 2), int(cy + h / 2))
+    if outline_color is not None:
+        cv2.putText(img, str(text), origin, FONT, scale, outline_color,
+                    thickness + 4, cv2.LINE_AA)
+    cv2.putText(img, str(text), origin, FONT, scale, color, thickness,
+                cv2.LINE_AA)
 
 
 def _render_text(img, commands):
     image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(image)
-    for text, cx, cy, scale, color, thickness in commands:
+    for text, cx, cy, scale, color, thickness, outline_color in commands:
         size = max(13, round(scale * 28))
         rgb = (int(color[2]), int(color[1]), int(color[0]))
+        stroke_color = (
+            rgb if outline_color is None
+            else (int(outline_color[2]), int(outline_color[1]),
+                  int(outline_color[0]))
+        )
+        stroke_width = max(0, round(thickness / 3))
+        if outline_color is not None:
+            stroke_width = max(stroke_width, 2)
         draw.text((int(cx), int(cy)), text, font=_font(size), fill=rgb,
-                  anchor="mm", stroke_width=max(0, round(thickness / 3)),
-                  stroke_fill=rgb)
+                  anchor="mm", stroke_width=stroke_width,
+                  stroke_fill=stroke_color)
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
@@ -500,7 +516,8 @@ class Renderer:
                 label = ("SOUND: ON" if audio_enabled else "SOUND: OFF") \
                     if audio_available else "NO AUDIO DEVICE"
             text_center(canvas, label, button.x + button.w / 2,
-                        button.y + button.h / 2 - 2, 0.65, WHITE, 2)
+                        button.y + button.h / 2 - 2, 0.65, WHITE, 2,
+                        outline_color=DARK if button.name == "VOLUME_DOWN" else None)
             if button.name == "START":
                 bx, by, bw, bh = (int(button.x + 25), int(button.y + button.h - 15),
                                   int(button.w - 50), 7)

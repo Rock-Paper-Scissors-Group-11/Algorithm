@@ -1,6 +1,6 @@
 """Phase 2 test: show the live webcam. Press 'q' to quit.
 
-Run with:  python preview_camera.py
+Run with:  python -m scripts.preview_camera
 """
 import time
 

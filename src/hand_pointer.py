@@ -1,7 +1,7 @@
 """Hand Pointer - use the index fingertip like a mouse, click by waiting.
 
 Move your index fingertip over a button and KEEP it there for DWELL_SECONDS
-(3 s). A progress bar fills on the button. When it is full = click.
+seconds. A progress bar fills on the button. When it is full = click.
 
 This file does NOT draw anything and does NOT open the camera.
 """

@@ -45,6 +45,19 @@ def ensure_model(path: str = MODEL_PATH) -> str:
     return path
 
 
+def select_primary_hand(hands):
+    """Return the hand with the largest normalized bounding-box area."""
+    if not hands:
+        return None
+
+    def bounding_box_area(hand):
+        xs = [point[0] for point in hand]
+        ys = [point[1] for point in hand]
+        return (max(xs) - min(xs)) * (max(ys) - min(ys))
+
+    return max(hands, key=bounding_box_area)
+
+
 class HandTracker:
     def __init__(self):
         model_path = ensure_model()
@@ -63,7 +76,9 @@ class HandTracker:
         """Find the hand in one camera frame.
 
         Returns a list of 21 (x, y, z) points (values between 0 and 1,
-        x/y relative to the image size), or None if no hand is visible.
+        x/y relative to the image size), or None if no hand is visible. If
+        multiple hands are detected, returns the hand with the largest
+        bounding box (width multiplied by height).
         """
         rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)  # MediaPipe wants RGB
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
@@ -77,7 +92,11 @@ class HandTracker:
         result = self.landmarker.detect_for_video(mp_image, timestamp)
         if not result.hand_landmarks:
             return None
-        return [(p.x, p.y, p.z) for p in result.hand_landmarks[0]]
+        hands = [
+            [(point.x, point.y, point.z) for point in hand]
+            for hand in result.hand_landmarks
+        ]
+        return select_primary_hand(hands)
 
     @staticmethod
     def draw(frame_bgr, landmarks) -> None:

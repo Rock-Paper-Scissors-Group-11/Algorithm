@@ -4,7 +4,7 @@ Big text   = STABLE gesture (after majority voting)  <- the game will use this
 Small text = RAW gesture (straight from the classifier, can flicker)
 Press 'q' to quit.
 
-Run with:  python test_hand.py
+Run with:  python -m scripts.test_hand
 """
 import cv2
 
