@@ -2,9 +2,9 @@
 
 ## Automated tests
 
-Command: `python -m pytest -q`
+Command: `python -m pytest`
 
-Result: **79 passed**.
+Result: **86 passed, 0 failed**.
 
 ## Real camera tests
 

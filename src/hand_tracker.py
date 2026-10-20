@@ -1,4 +1,3 @@
-"""Hand Tracker - finds the 21 hand landmarks with MediaPipe. (Phase 3)"""
 """Hand Tracker - finds the 21 hand landmarks using MediaPipe (Tasks API).
 
 Note: new MediaPipe versions removed the old `mp.solutions` code, so we use

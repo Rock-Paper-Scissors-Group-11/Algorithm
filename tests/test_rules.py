@@ -1,4 +1,3 @@
-"""Tests for test_rules (written in a later phase)."""
 """Tests for the rule engine (Phase 1).
 
 Run with:  python -m pytest -v

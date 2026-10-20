@@ -1,4 +1,3 @@
-"""Rule Engine - decides WIN, LOSE or DRAW. (Phase 1)"""
 """Rule Engine - decides WIN, LOSE or DRAW.
 
 This file knows NOTHING about the camera or the screen.

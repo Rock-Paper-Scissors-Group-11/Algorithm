@@ -1,7 +1,7 @@
 const TARGET_SCORE = 3;
 const COUNTDOWN_SECONDS = 3;
 const CAPTURE_SECONDS = 5;
-const RESULT_SECONDS = 2;
+const RESULT_SECONDS = 3;
 const HISTORY_KEY = "handrps.matches.v1";
 const GESTURES = ["ROCK", "PAPER", "SCISSORS"];
 const GESTURE_DETAILS = {

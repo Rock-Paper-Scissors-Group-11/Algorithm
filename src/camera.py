@@ -1,4 +1,3 @@
-"""Camera Manager - opens the webcam and gives frames. (Phase 2)"""
 """Camera Manager - opens the webcam and gives frames.
 
 It never crashes: if the camera is missing or disconnected, read() simply

@@ -57,7 +57,7 @@ To measure gesture accuracy and average FPS under your lighting, run:
 python -m scripts.measure_accuracy
 ```
 
-The script asks for the lighting condition, then records 20 trials each for Rock, Paper, and Scissors. It prints and appends the actual run results to `docs/measured_results.md`; it does not estimate camera accuracy or FPS.
+The script asks for the lighting condition, then records 20 trials each for Rock, Paper, and Scissors. It prints the actual run results and creates (or appends to) `docs/measured_results.md`; it does not estimate camera accuracy or FPS.
 
 ## Known limitations
 
