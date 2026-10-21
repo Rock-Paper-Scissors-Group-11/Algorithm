@@ -15,6 +15,29 @@ class Camera:
         self.index = index
         self.cap = None
 
+    @staticmethod
+    def available_indices() -> list[int]:
+        """Return indexes 0-3 that can be opened, releasing every probe."""
+        indices = []
+        for index in range(4):
+            capture = None
+            try:
+                if sys.platform.startswith("win"):
+                    capture = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+                else:
+                    capture = cv2.VideoCapture(index)
+                if capture.isOpened():
+                    indices.append(index)
+            except Exception as error:
+                print(f"[Camera] Could not probe camera {index}: {error}")
+            finally:
+                if capture is not None:
+                    try:
+                        capture.release()
+                    except Exception as error:
+                        print(f"[Camera] Could not release camera probe {index}: {error}")
+        return indices
+
     def open(self) -> bool:
         """Try to open the webcam. Returns True if it works."""
         try:

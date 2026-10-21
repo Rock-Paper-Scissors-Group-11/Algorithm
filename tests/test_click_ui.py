@@ -183,7 +183,7 @@ def test_welcome_and_menu_screens_offer_expected_navigation():
 def test_settings_and_result_screens_offer_expected_controls():
     game, _ = button_mode_game()
     assert [button.name for button in buttons_for(game, "SETTINGS")] == [
-        "SOUND_TOGGLE", "VOLUME_DOWN", "VOLUME_UP", "BACK",
+        "SOUND_TOGGLE", "VOLUME_DOWN", "VOLUME_UP", "CAMERA", "BACK",
     ]
     assert [button.name for button in buttons_for(game, "RESULT")] == [
         "AGAIN", "MAIN_MENU", "HISTORY", "EXIT",

@@ -68,7 +68,8 @@ class SilentAudio:
         pass
 
 
-def handle_action(action, game, view, audio, history_return_view):
+def handle_action(action, game, view, audio, history_return_view, camera=None,
+                  available_camera_indices=()):
     """Do what the clicked button says. Returns the new view."""
     if action == "START" and view == "WELCOME":
         return "HOME"
@@ -86,6 +87,15 @@ def handle_action(action, game, view, audio, history_return_view):
         return "HELP"
     if action == "SETTINGS":
         return "SETTINGS"
+    if action == "CAMERA" and camera is not None:
+        camera.release()
+        indices = available_camera_indices or [camera.index]
+        try:
+            current_position = indices.index(camera.index)
+        except ValueError:
+            current_position = -1
+        camera.index = indices[(current_position + 1) % len(indices)]
+        camera.open()
     if action == "SOUND_TOGGLE":
         audio.set_enabled(not audio.enabled)
     elif action == "VOLUME_DOWN":
@@ -130,6 +140,9 @@ def main() -> None:
         tracker = None
 
     camera = Camera()
+    available_camera_indices = Camera.available_indices() or [camera.index]
+    if camera.index not in available_camera_indices:
+        camera.index = available_camera_indices[0]
     camera_available = camera.open()
     next_camera_retry = time.monotonic() + 2.0
     failed_camera_frames = 0
@@ -195,7 +208,7 @@ def main() -> None:
             else:
                 fingertip = None
             cursor = pointer.update(fingertip)
-            buttons = buttons_for(game, view)
+            buttons = buttons_for(game, view, camera.index)
 
             action = clicker.update(cursor, buttons, now)
             if mouse_click:
@@ -212,7 +225,14 @@ def main() -> None:
             if action:
                 if action == "HISTORY":
                     history_return_view = view
-                view = handle_action(action, game, view, audio, history_return_view)
+                view = handle_action(
+                    action, game, view, audio, history_return_view, camera,
+                    available_camera_indices,
+                )
+                if action == "CAMERA":
+                    camera_available = camera.is_opened()
+                    failed_camera_frames = 0
+                    next_camera_retry = time.monotonic() + 2.0
             if (view == "GAME" and game.state == State.RESULT
                     and game.is_game_over):
                 view = "RESULT"
@@ -232,10 +252,11 @@ def main() -> None:
                     audio.play(sound)
             last_game_state = game.state
 
-            buttons = buttons_for(game, view)
+            buttons = buttons_for(game, view, camera.index)
             screen = renderer.draw(
                 game, frame, raw, view, buttons, cursor, clicker, now,
                 audio.enabled, audio.volume, camera_available, audio.available,
+                hand_detected=landmarks is not None,
             )
             window_rect = cv2.getWindowImageRect(WINDOW)
             window_w, window_h = window_rect[2], window_rect[3]

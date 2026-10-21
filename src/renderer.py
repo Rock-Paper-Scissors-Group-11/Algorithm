@@ -33,6 +33,7 @@ PALE = (249, 249, 252)
 RESULT_COLORS = {WIN: GREEN, LOSE: RED, DRAW: (0, 190, 240)}
 BUTTON_COLORS = {
     "START": GREEN, "AGAIN": GREEN, "HELP": PURPLE, "SETTINGS": PURPLE,
+    "CAMERA": PURPLE,
     "SOUND_TOGGLE": GREEN, "VOLUME_DOWN": ORANGE, "VOLUME_UP": PURPLE,
     "HISTORY": PURPLE, "CLEAR_HISTORY": ORANGE, "BACK": BLUE,
     "MAIN_MENU": PURPLE, "EXIT": RED, "PAUSE": ORANGE, "RESUME": GREEN,
@@ -41,7 +42,8 @@ BUTTON_COLORS = {
 BUTTON_LABELS = {
     "START": "START GAME", "AGAIN": "PLAY AGAIN",
     "HELP": "HOW TO PLAY",
-    "SETTINGS": "SETTINGS", "SOUND_TOGGLE": "SOUND: ON",
+    "SETTINGS": "SETTINGS", "CAMERA": "CAMERA",
+    "SOUND_TOGGLE": "SOUND: ON",
     "VOLUME_DOWN": "VOLUME -", "VOLUME_UP": "VOLUME +",
     "HISTORY": "HISTORY", "CLEAR_HISTORY": "CLEAR HISTORY", "BACK": "BACK",
     "MAIN_MENU": "MAIN MENU", "EXIT": "EXIT", "PAUSE": "PAUSE",
@@ -164,7 +166,7 @@ def make_background():
     return bg
 
 
-def buttons_for(game, view):
+def buttons_for(game, view, camera_index=None):
     """Return the clickable controls visible on the selected screen."""
     specs = {
         "WELCOME": [("START", 410, 565, 280, 66)],
@@ -178,6 +180,7 @@ def buttons_for(game, view):
             ("SOUND_TOGGLE", 235, 500, 260, 60),
             ("VOLUME_DOWN", 520, 500, 150, 60),
             ("VOLUME_UP", 690, 500, 150, 60),
+            ("CAMERA", 850, 500, 220, 60),
             ("BACK", 440, 580, 220, 58),
         ],
         "HISTORY": [
@@ -201,8 +204,13 @@ def buttons_for(game, view):
         else:
             specs["GAME"] = [(name, 300 + index * 270, 575, 230, 62)
                              for index, name in enumerate(names)]
-    return [Button(name, BUTTON_LABELS[name], x, y, w, h)
-            for name, x, y, w, h in specs.get(view, [])]
+    buttons = [Button(name, BUTTON_LABELS[name], x, y, w, h)
+               for name, x, y, w, h in specs.get(view, [])]
+    if camera_index is not None:
+        for button in buttons:
+            if button.name == "CAMERA":
+                button.label = f"CAMERA {camera_index}"
+    return buttons
 
 
 class Renderer:
@@ -211,7 +219,7 @@ class Renderer:
 
     def draw(self, game, frame, raw_gesture, view, buttons, cursor, clicker, now,
              audio_enabled=True, volume=0.8, camera_available=True,
-             audio_available=True):
+             audio_available=True, hand_detected=None):
         global _TEXT_QUEUE
         canvas = self._background.copy()
         _TEXT_QUEUE = []
@@ -232,7 +240,7 @@ class Renderer:
             else:
                 self._draw_cards(canvas, game, frame, raw_gesture)
                 self._draw_center_box(canvas, game)
-                self._draw_caption(canvas, game)
+                self._draw_caption(canvas, game, hand_detected)
                 if view == "PAUSED":
                     self._draw_paused_overlay(canvas)
             self._draw_buttons(canvas, buttons, clicker, now, audio_enabled,
@@ -413,7 +421,7 @@ class Renderer:
         rounded_rect(canvas, 480, 257, 140, 74, 16, color)
         text_center(canvas, label, 550, 294, scale, WHITE, 3)
 
-    def _draw_caption(self, canvas, game):
+    def _draw_caption(self, canvas, game, hand_detected=None):
         score = game.score
         caption, color = "", DARK
         if game.state == State.HOME:
@@ -423,7 +431,8 @@ class Renderer:
         elif game.state == State.COUNTDOWN:
             caption = "Get ready... do not show your hand yet"
         elif game.state == State.CAPTURE:
-            caption = "Show ROCK, PAPER, or SCISSORS!"
+            caption = ("Show your hand" if hand_detected is False
+                       else "Show ROCK, PAPER, or SCISSORS!")
         elif game.state == State.RESULT:
             if game.is_game_over:
                 won = score.player_score > score.computer_score
